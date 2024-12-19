@@ -11,8 +11,7 @@ const CaptchaApp = () => {
   useEffect(() => {
     const loadScript = () => {
       const script = document.createElement("script");
-      script.src =
-        "https://b82b1763d1c3.eu-west-3.captcha-sdk.awswaf.com/b82b1763d1c3/jsapi.js";
+      script.src ="https://b82b1763d1c3.eu-west-3.captcha-sdk.awswaf.com/b82b1763d1c3/jsapi.js";
       script.type = "text/javascript";
       script.defer = true;
       script.onload = () => setScriptLoaded(true);
@@ -31,7 +30,7 @@ const CaptchaApp = () => {
       window.AwsWafCaptcha
     ) {
       window.showMyCaptcha = function () {
-        const container = document.querySelector("#my-captcha-container");
+        const container = document.querySelector("#cptcha");
 
         window.AwsWafCaptcha.renderCaptcha(container, {
           apiKey: process.env.NEXT_PUBLIC_WAF_API_KEY,
