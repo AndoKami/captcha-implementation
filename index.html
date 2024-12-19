@@ -44,7 +44,7 @@
           if (response.ok) {
             output.innerHTML += `<p>${i}. Forbidden</p>`;
           } else {
-            if (response.status === 403) {
+            if (response.status === 429) {
               // Gérer le CAPTCHA ici
               output.innerHTML += `<p>${i}. CAPTCHA requis, veuillez le résoudre pour continuer...</p>`;
               await handleCaptcha();
