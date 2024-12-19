@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>API Requester</title>
+  <title>API Requester avec CAPTCHA</title>
+  <script type="text/javascript" src="https://b82b1763d1c3.eu-west-3.captchasdk.awswaf.com/b82b1763d1c3/jsapi.js" defer></script>
   <style>
     body { font-family: Arial, sans-serif; margin: 20px; }
     #output { margin-top: 20px; }
@@ -18,10 +19,14 @@
   </form>
 
   <div id="output" class="hidden"></div>
+  <div id="captchaContainer" class="hidden"></div>
 
   <script>
     const form = document.getElementById('numberForm');
     const output = document.getElementById('output');
+    const captchaContainer = document.getElementById('captchaContainer');
+
+    let stopRequests = false; // Pour arrêter les requêtes pendant le CAPTCHA
 
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
@@ -32,15 +37,18 @@
       output.innerHTML = "<p>Chargement...</p>";
 
       for (let i = 1; i <= N; i++) {
+        if (stopRequests) break;
+
         try {
           const response = await fetch("https://api.prod.jcloudify.com/whoami");
           if (response.ok) {
             output.innerHTML += `<p>${i}. Forbidden</p>`;
           } else {
-            if (response.status === 429) {
-              // Gérer le CAPTCHA ici (intégration spécifique nécessaire)
-              output.innerHTML += `<p>${i}. CAPTCHA requis, veuillez résoudre pour continuer...</p>`;
-              break;
+            if (response.status === 403) {
+              // Gérer le CAPTCHA ici
+              output.innerHTML += `<p>${i}. CAPTCHA requis, veuillez le résoudre pour continuer...</p>`;
+              await handleCaptcha();
+              output.innerHTML += `<p>CAPTCHA résolu. Reprise des requêtes...</p>`;
             } else {
               output.innerHTML += `<p>${i}. Erreur: ${response.status}</p>`;
             }
@@ -48,9 +56,40 @@
         } catch (err) {
           output.innerHTML += `<p>${i}. Erreur de connexion</p>`;
         }
+
         await new Promise(resolve => setTimeout(resolve, 1000)); // Espacement de 1 seconde
       }
+
+      if (!stopRequests) {
+        output.innerHTML += `<p>Opération terminée.</p>`;
+      }
     });
+
+    // Gestion du CAPTCHA AWS WAF
+    async function handleCaptcha() {
+      stopRequests = true;
+      captchaContainer.classList.remove('hidden');
+
+      return new Promise((resolve) => {
+        const callback = () => {
+          // Reprendre les requêtes une fois le CAPTCHA résolu
+          stopRequests = false;
+          captchaContainer.classList.add('hidden');
+          resolve();
+        };
+
+        // Initialiser le CAPTCHA AWS WAF
+        window.CaptchaSDK.run({
+          containerId: 'captchaContainer',
+          callback: callback, // Appelé quand le CAPTCHA est résolu
+          onError: (error) => {
+            console.error("Erreur CAPTCHA :", error);
+            alert("Erreur lors du chargement du CAPTCHA. Veuillez réessayer.");
+            resolve(); // Continuer même en cas d'échec
+          }
+        });
+      });
+    }
   </script>
 </body>
 </html>
